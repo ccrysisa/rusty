@@ -92,7 +92,7 @@ macro_rules! avec {
     // }};
 
     ($($elem:expr),*) => {{
-        // chek that count is const since const must be known in compile time
+        // check that count is const since const must be known in compile time
         const C: usize = $crate::count![@COUNT; $($elem),*];
 
         #[allow(unused_mut)]
