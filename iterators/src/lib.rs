@@ -1,8 +1,19 @@
+pub mod flatmap;
+
+use crate::flatmap::flat_map;
+use crate::flatmap::FlatMap;
+
 pub trait IteratorExt: Iterator {
     fn our_flatten(self) -> Flatten<Self>
     where
         Self: Sized,
         Self::Item: IntoIterator;
+
+    fn our_flat_map<I, F>(self, f: F) -> FlatMap<Self, I, F>
+    where
+        Self: Sized,
+        I: IntoIterator,
+        F: FnMut(Self::Item) -> I;
 }
 
 impl<T> IteratorExt for T
@@ -15,6 +26,15 @@ where
         Self::Item: IntoIterator,
     {
         flatten(self)
+    }
+
+    fn our_flat_map<I, F>(self, f: F) -> FlatMap<Self, I, F>
+    where
+        Self: Sized,
+        I: IntoIterator,
+        F: FnMut(Self::Item) -> I,
+    {
+        flat_map(self, f)
     }
 }
 
@@ -178,5 +198,6 @@ mod tests {
     #[test]
     fn ext() {
         assert_eq!(vec![vec![1, 2]].into_iter().our_flatten().count(), 2);
+        assert_eq!(vec![1, 2].into_iter().flat_map(|i| 0..i).count(), 3);
     }
 }
