@@ -9,7 +9,7 @@ pub trait IteratorExt: Iterator {
         Self: Sized,
         Self::Item: IntoIterator;
 }
-pub trait FlatMapExt<I, F>: IteratorExt {
+pub trait FlatMapExt<I, F>: Iterator {
     fn our_flat_map(self, f: F) -> FlatMap<Self, I, F>
     where
         Self: Sized,
@@ -32,7 +32,7 @@ where
 
 impl<T, I, F> FlatMapExt<I, F> for T
 where
-    T: IteratorExt,
+    T: Iterator,
 {
     fn our_flat_map(self, f: F) -> FlatMap<Self, I, F>
     where
