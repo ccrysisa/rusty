@@ -92,12 +92,58 @@ where
     }
 }
 
+pub struct Drain<'a, K, V> {
+    map: &'a mut HashMap<K, V>,
+    bucket: usize,
+}
+
+impl<'a, K, V> Iterator for Drain<'a, K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.map.buckets.get_mut(self.bucket) {
+                Some(bucket) => match bucket.items.pop() {
+                    Some(e) => {
+                        self.map.count -= 1;
+                        break Some(e);
+                    }
+                    None => {
+                        self.bucket += 1;
+                        continue;
+                    }
+                },
+                None => break None,
+            }
+        }
+    }
+}
+
+impl<'a, K, V> Drop for Drain<'a, K, V> {
+    fn drop(&mut self) {
+        self.map.clear()
+    }
+}
+
 impl<K, V> HashMap<K, V> {
     pub fn new() -> Self {
         Self {
             buckets: Vec::new(),
             count: 0,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.count
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+
+    pub fn clear(&mut self) {
+        self.buckets.clear();
+        self.count = 0;
     }
 }
 
@@ -163,6 +209,19 @@ where
             .map(|&(_, ref value)| value)
     }
 
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
+    {
+        let bucket = self.bucket(key)?;
+        self.buckets[bucket]
+            .items
+            .iter_mut()
+            .find(|&&mut (ref ekey, _)| ekey.borrow() == key)
+            .map(|&mut (_, ref mut value)| value)
+    }
+
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -186,20 +245,19 @@ where
         Some(bucket.items.swap_remove(i))
     }
 
+    pub fn drain(&mut self) -> Drain<'_, K, V> {
+        Drain {
+            map: self,
+            bucket: 0,
+        }
+    }
+
     pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         K: Borrow<Q>,
         Q: Hash + Eq + ?Sized,
     {
         self.get(key).is_some()
-    }
-
-    pub fn len(&self) -> usize {
-        self.count
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.count == 0
     }
 
     fn bucket<Q>(&self, key: &Q) -> Option<usize>
@@ -422,6 +480,21 @@ mod tests {
     }
 
     #[test]
+    fn get() {
+        let mut map = HashMap::new();
+        map.insert(1, "a");
+        assert_eq!(map.get(&1), Some(&"a"));
+        assert_eq!(map.get(&2), None);
+
+        let mut map = HashMap::new();
+        map.insert(1, "a");
+        if let Some(x) = map.get_mut(&1) {
+            *x = "b";
+        }
+        assert_eq!(map[&1], "b");
+    }
+
+    #[test]
     fn remove() {
         let mut map = HashMap::new();
         map.insert(1, "a");
@@ -432,6 +505,27 @@ mod tests {
         map.insert(1, "a");
         assert_eq!(map.remove_entry(&1), Some((1, "a")));
         assert_eq!(map.remove(&1), None);
+    }
+
+    #[test]
+    fn drain() {
+        let mut a = HashMap::new();
+        a.insert(1, "a");
+        a.insert(2, "b");
+
+        assert_eq!(a.len(), 2);
+        for (k, v) in a.drain().take(1) {
+            assert!(k == 1 || k == 2);
+            assert!(v == "a" || v == "b");
+        }
+
+        assert!(a.is_empty());
+
+        let mut map = HashMap::from([("a", 1), ("b", 2)]);
+        assert_eq!(map.len(), 2);
+        let iter = map.drain();
+        drop(iter);
+        assert!(map.is_empty());
     }
 
     #[test]
@@ -483,6 +577,12 @@ mod tests {
         assert_eq!(map.contains_key("key"), false);
         assert_eq!(map.get("key"), None);
         assert_eq!(map.remove("key"), None);
+
+        let mut a = HashMap::new();
+        a.insert(1, "a");
+        assert_eq!(a.len(), 1);
+        a.clear();
+        assert!(a.is_empty());
     }
 
     #[test]
