@@ -351,12 +351,11 @@ impl<'a, K, V> IntoIterator for &'a HashMap<K, V> {
 
 //     fn next(&mut self) -> Option<Self::Item> {
 //         loop {
-//             match self.map.buckets.get(self.bucket) {
-//                 Some(bucket) => match bucket.items.get(self.at) {
-//                     Some(&(ref key, _)) => {
-//                         break Some((key, &mut self.map.buckets[self.bucket].items[self.at].1));
+//             match self.map.buckets.get_mut(self.bucket) {
+//                 Some(bucket) => match bucket.items.get_mut(self.at) {
+//                     Some(&mut (ref mut key, ref mut value)) => {
+//                         break Some((key, value));
 //                     }
-
 //                     None => {
 //                         self.bucket += 1;
 //                         self.at = 0;
@@ -429,7 +428,13 @@ where
     K: Hash + Eq,
 {
     fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        let mut map = Self::new();
+        // let mut map = Self::new();
+        let iter = iter.into_iter();
+        let capacity = iter.size_hint().0;
+        let mut map = Self {
+            buckets: Vec::with_capacity(capacity),
+            count: 0,
+        };
         for (key, value) in iter {
             map.insert(key, value);
         }
