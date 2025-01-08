@@ -1,6 +1,6 @@
 use rand::prelude::*;
 use sort::{
-    bubblesort::BubbleSort, insertionsort::InsertionSort, quicksort::QuickSort,
+    bubblesort::BubbleSort, heapsort::HeapSort, insertionsort::InsertionSort, quicksort::QuickSort,
     selectionsort::SelectionSort, Sorter, StdSorter, StdUnstableSorter,
 };
 use std::{cell::Cell, rc::Rc};
@@ -79,6 +79,8 @@ fn main() {
             let took = bench(SelectionSort, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "selection", n, took.0, took.1);
             let took = bench(QuickSort, &mut values, Rc::clone(&counter));
+            println!("{} {} {} {}", "heap", n, took.0, took.1);
+            let took = bench(HeapSort, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "quick", n, took.0, took.1);
             let took = bench(StdSorter, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "std", n, took.0, took.1);
