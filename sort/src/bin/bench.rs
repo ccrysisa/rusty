@@ -1,7 +1,7 @@
 use rand::prelude::*;
 use sort::{
-    bubblesort::BubbleSort, heapsort::HeapSort, insertionsort::InsertionSort, quicksort::QuickSort,
-    selectionsort::SelectionSort, Sorter, StdSorter, StdUnstableSorter,
+    bubblesort::BubbleSort, heapsort::HeapSort, insertionsort::InsertionSort, mergesort::Mergesort,
+    quicksort::QuickSort, selectionsort::SelectionSort, Sorter, StdSorter, StdUnstableSorter,
 };
 use std::{cell::Cell, rc::Rc};
 
@@ -72,18 +72,28 @@ fn main() {
 
             let took = bench(BubbleSort, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "bubble", n, took.0, took.1);
+
             let took = bench(InsertionSort::new(false), &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "insertion-dump", n, took.0, took.1);
+
             let took = bench(InsertionSort::new(true), &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "insertion-smart", n, took.0, took.1);
+
             let took = bench(SelectionSort, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "selection", n, took.0, took.1);
-            let took = bench(QuickSort, &mut values, Rc::clone(&counter));
-            println!("{} {} {} {}", "heap", n, took.0, took.1);
+
             let took = bench(HeapSort, &mut values, Rc::clone(&counter));
+            println!("{} {} {} {}", "heap", n, took.0, took.1);
+
+            let took = bench(Mergesort, &mut values, Rc::clone(&counter));
+            println!("{} {} {} {}", "merge", n, took.0, took.1);
+
+            let took = bench(QuickSort, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "quick", n, took.0, took.1);
+
             let took = bench(StdSorter, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "std", n, took.0, took.1);
+
             let took = bench(StdUnstableSorter, &mut values, Rc::clone(&counter));
             println!("{} {} {} {}", "std-unstable", n, took.0, took.1);
         }
